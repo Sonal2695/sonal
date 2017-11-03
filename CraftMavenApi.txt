@@ -1,0 +1,680 @@
+
+CraftController.java:-
+
+
+package controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import model.CraftApi;
+import model.response.wrapper.ProjectResult;
+import service.ProjectService;
+import service.impl.ProjectServiceImpl;
+
+@RestController
+public class CraftController {
+	@Autowired
+	ProjectService projectService;
+
+	 @RequestMapping(value = "/craftapis", method = RequestMethod.GET, produces = "application/json")
+	 public ProjectResult getCraftApi() {
+		 System.out.println("in controller");
+		 return projectService.getAllUser();
+	 }
+
+	 @RequestMapping(value = "/craftapis/{username}", method = RequestMethod.GET)
+	 public ProjectResult getCraftApi(@PathVariable("username") String username) {
+		 return projectService.getUser(username);
+	 }
+
+	 @RequestMapping(value = "/craftapis/deletes/{username}", method = RequestMethod.DELETE)
+	 public  ProjectResult deleteProjectApi(@PathVariable("username") String username) {
+		 return projectService.deleteUser(username);
+	 }
+
+	 @RequestMapping(value = "/craftapis", method = RequestMethod.POST,produces = "application/json")
+	 public  ProjectResult createProjectApi(@RequestBody CraftApi craftapi) {
+		 return projectService.insertUser(craftapi);
+	 }
+
+	 @RequestMapping(value = "/craftapis/{username}", method = RequestMethod.PUT)
+	 public  ProjectResult updateProjectApi(@RequestBody CraftApi craftapi) {
+		 return projectService.updateUser(craftapi);
+	 }
+
+}
+
+
+ProjectDAO.java:-
+
+
+package dao;
+
+import java.util.List;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import model.CraftApi;
+
+@Repository
+public class ProjectDao {
+
+	 private JdbcTemplate jdbcTemplate;
+
+	 @Autowired
+	 public void setDataSource(DataSource dataSource) {
+	  this.jdbcTemplate = new JdbcTemplate(dataSource);
+	 }
+
+	 public List<CraftApi> getProjectApi() {
+		 System.out.println("in dao");
+	  List<CraftApi> craftApi = null ;
+	  
+	  try {
+		  craftApi = jdbcTemplate.query("SELECT * FROM ProjectApi1_Sonal ",new BeanPropertyRowMapper<CraftApi>(CraftApi.class));   
+	  } catch (DataAccessException e) {
+	   e.printStackTrace();
+	  }
+	  return craftApi;
+	 }
+
+	 public CraftApi getProjectApi(String username) {
+		 CraftApi craftApi = null;
+	  try {
+		  craftApi = jdbcTemplate.queryForObject("SELECT * FROM ProjectApi1_Sonal WHERE username = ?",
+	     new Object[] { username }, new BeanPropertyRowMapper<CraftApi>(CraftApi.class));
+	  } catch (DataAccessException e) {
+	   e.printStackTrace();
+	  }
+	  return craftApi;
+
+	 }
+
+	 public CraftApi deleteProjectApi(String username) {
+		 CraftApi craftApi = null;
+		 craftApi = jdbcTemplate.queryForObject("SELECT * FROM ProjectApi1_Sonal WHERE username = ?",
+		new Object[] { username }, new BeanPropertyRowMapper<CraftApi>(CraftApi.class));
+	  int count = jdbcTemplate.update("DELETE from ProjectApi1_Sonal WHERE username = ?", new Object[] { username });
+	  if(count==1)
+		  return craftApi;
+		  else
+			  return null; 
+	 }
+
+	 public CraftApi updateProjectApi(CraftApi craftApi) {
+	  int count = jdbcTemplate.update(
+	    "UPDATE ProjectApi1_Sonal set productName = ? , productCost = ? , deliveryDate=? where username = ?", new Object[] {
+	    		craftApi.getProductName(), craftApi.getProductCost(), craftApi.getDeliveryDate(), craftApi.getUsername() });
+	  return craftApi;
+	 }
+
+	 public CraftApi createProjectApi(CraftApi craftApi) {
+	  int count = jdbcTemplate.update(
+	    "INSERT INTO ProjectApi1_Sonal(username,productName, productCost, deliveryDate)VALUES(?,?,?,?)", new Object[] {
+	    		craftApi.getUsername(), craftApi.getProductName(), craftApi.getProductCost(), craftApi.getDeliveryDate() });
+	  return craftApi;
+	 }
+
+}
+
+
+model:-
+
+
+CraftApi.java:-
+
+package model;
+import java.sql.Date;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class CraftApi {
+
+ private String username;
+ private String productName;
+ private int productCost;
+ private Date deliveryDate;
+
+ @JsonCreator
+ public CraftApi(@JsonProperty("username") String username, @JsonProperty("productName") String productName,
+   @JsonProperty("productCost") int productCost, @JsonProperty("deliveryDate") Date deliveryDate) {
+  this.username=username;
+  this.productName=productName;
+  this.productCost=productCost;
+  this.deliveryDate=deliveryDate;
+
+ }
+
+ public CraftApi() {
+
+ }
+ 
+
+public String getUsername() {
+	return username;
+}
+
+public void setUsername(String username) {
+	this.username = username;
+}
+
+public String getProductName() {
+	return productName;
+}
+
+public void setProductName(String productName) {
+	this.productName = productName;
+}
+
+public int getProductCost() {
+	return productCost;
+}
+
+public void setProductCost(int productCost) {
+	this.productCost = productCost;
+}
+
+public Date getDeliveryDate() {
+	return deliveryDate;
+}
+
+public void setDeliveryDate(Date deliveryDate) {
+	this.deliveryDate = deliveryDate;
+}
+
+@Override
+public String toString() {
+ StringBuilder str = new StringBuilder();
+ str.append("username:- " + getUsername());
+ str.append("productName:- " + getProductName());
+ str.append("productCost:- " + getProductCost());
+ str.append("deliveryDate:- " + getDeliveryDate());
+ return str.toString();
+}
+}
+
+ErrorCodes.java:-
+
+package model;
+
+
+public enum ErrorCodes {
+
+	TRA1001("TRA1001"),
+	TRA1002("TRA1002"),
+	TRA1003("TRA1003"),
+	TRA1004("TRA1004"),
+	TRA1005("TRA1005"),
+	TRA1006("TRA1006"),
+	TRA1007("TRA1007"),
+	TRA1008("TRA1008"),
+	TRA1009("TRA1009"),
+	TRA1010("TRA1010"),
+	TRA1011("TRA1011"),
+	TRA1012("TRA1012"),
+	TRA1013("TRA1013"),
+	TRA1014("TRA1014"),
+	TRA1015("TRA1015"),
+	TRA1016("TRA1016"),
+	TRA1017("TRA1017"),
+	TRA1018("TRA1018"),
+	TRA1019("TRA1019"),
+	TRA1020("TRA1020");
+	
+
+	public String getErrorcode() {
+		return errorcode;
+	}
+
+	private ErrorCodes(String errorcode) {
+		this.errorcode = errorcode;
+	}
+
+	private String errorcode;
+	
+	
+
+}
+
+Errors.java:-
+
+
+package model;
+import org.springframework.stereotype.Component;
+
+@Component
+public class Errors {
+
+	private String code;
+	private String description;
+	
+	
+	public Errors() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+	public String getCode() {
+		return code;
+	}
+	public void setCode(String code) {
+		this.code = code;
+	}
+	public String getDescription() {
+		return description;
+	}
+	public void setDescription(String description) {
+		this.description = description;
+	}
+	
+
+}
+
+
+Metadata.java:-
+
+
+package model;
+
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class Metadata {
+	private boolean success;
+	private String description;
+	private String responseId;
+
+	
+	public Metadata() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+	public String getResponseId() {
+		return responseId;
+	}
+
+	public void setResponseId(String responseId) {
+		this.responseId = responseId;
+	}
+
+	public boolean getSuccess() {
+		return success;
+	}
+
+	public void setSuccess(boolean success) {
+		this.success = success;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+	
+
+}
+
+
+model.response.wrapper:-
+
+FailureProjectResult.java:-
+
+
+package model.response.wrapper;
+
+import org.springframework.stereotype.Component;
+
+import model.Errors;
+import model.Metadata;
+
+@Component
+public class FailureProjectResult implements ProjectResult{
+	private Metadata metadata;
+	private Errors errors;
+	
+			
+	public FailureProjectResult() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+	public Errors getErrors() {
+		return errors;
+	}
+
+	public void setErrors(Errors errors) {
+		this.errors = errors;
+	}
+
+	public Metadata getMetadata() {
+		// TODO Auto-generated method stub
+		return metadata;
+	}
+
+	public void setMetadata(Metadata metadata) {
+		// TODO Auto-generated method stub
+		this.metadata = metadata;
+	}
+
+
+}
+
+
+ProjectResult:-
+
+
+package model.response.wrapper;
+
+
+
+import model.Metadata;
+
+public interface ProjectResult {
+	public Metadata getMetadata();
+	public void setMetadata(Metadata metadata);
+
+}
+
+
+ProjectResultDate.java:-
+
+package model.response.wrapper;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Component;
+
+import model.CraftApi;
+
+
+
+@Component
+public class ProjectResultData {
+	private List<CraftApi> craftApi = new ArrayList<CraftApi>();
+
+	public ProjectResultData() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+	public List<CraftApi> getProject() {
+		return craftApi;
+	}
+
+	public void setProject(List<CraftApi> craftApi) {
+		this.craftApi = craftApi;
+	}
+	
+
+}
+
+SuccessProjectResult:-
+
+package model.response.wrapper;
+
+
+import org.springframework.stereotype.Component;
+
+import model.Metadata;
+
+@Component
+public class SuccessProjectResult implements ProjectResult{
+	private Metadata metadata;
+	private ProjectResultData data;
+	
+		
+	public SuccessProjectResult() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+	public Metadata getMetadata() {
+		return metadata;
+	}
+
+	public void setMetadata(Metadata metadata) {
+		this.metadata = metadata;
+	}
+
+	public ProjectResultData getData() {
+		return data;
+	}
+
+	public void setData(ProjectResultData data) {
+		this.data = data;
+	}
+
+	
+			
+
+}
+
+
+
+Service:-
+
+package service;
+
+
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import model.CraftApi;
+
+import model.response.wrapper.ProjectResult;
+
+
+
+public interface ProjectService {
+	
+	public ProjectResult getAllUser();
+	public ProjectResult getUser(@PathVariable String username);
+	public ProjectResult insertUser(@RequestBody CraftApi craftApi);
+	public ProjectResult updateUser(@RequestBody CraftApi craftApi);
+	public ProjectResult deleteUser(@PathVariable String username);
+
+}
+
+
+Service.impl:-
+
+
+package service.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+
+import dao.ProjectDao;
+import model.Errors;
+import model.Metadata;
+import model.CraftApi;
+import model.response.wrapper.FailureProjectResult;
+import model.response.wrapper.ProjectResult;
+import model.response.wrapper.SuccessProjectResult;
+import model.response.wrapper.ProjectResultData;
+import service.ProjectService;
+
+@Service
+public class ProjectServiceImpl implements ProjectService{
+	@Autowired
+	ProjectDao dao;
+
+	@Autowired
+	ProjectResultData ProjectResultData;
+
+	@Autowired
+	SuccessProjectResult  SuccessProjectResult;
+	@Autowired
+	FailureProjectResult FailureProjectResult;
+	@Autowired
+	Metadata metadata;
+	@Autowired
+	Errors errors;
+	boolean success = true;
+	boolean failure = false;
+	
+
+	@Override
+	public ProjectResult getAllUser() {
+		System.out.println("in serviceimpl");
+		List<CraftApi> ProjectList = dao.getProjectApi();
+		//System.out.println(DoctorList);
+		System.out.println("INsideeee");
+		if (!ProjectList.isEmpty()) {
+			metadata.setSuccess(success);
+			metadata.setDescription("List of all orders");
+			metadata.setResponseId("TRA-" + "NX-" + UUID.randomUUID().toString());
+			ProjectResultData.setProject(ProjectList);
+			SuccessProjectResult.setMetadata(metadata);
+			SuccessProjectResult.setData(ProjectResultData);
+			return SuccessProjectResult;
+
+		} else {
+			metadata.setSuccess(failure);
+			metadata.setDescription("List of all orders Not found");
+			metadata.setResponseId("TRA-" + "NX-" + UUID.randomUUID().toString());
+			FailureProjectResult.setMetadata(metadata);
+			errors.setCode("TRA-1001");
+			errors.setDescription("No data available at this time");
+			FailureProjectResult.setErrors(errors);
+			return FailureProjectResult;
+		}
+	}
+
+	@Override
+	public ProjectResult getUser(String username) {
+		List<CraftApi> ProjectList = new ArrayList<CraftApi>();
+		CraftApi projApi = dao.getProjectApi(username);
+		if (projApi != null) {
+			ProjectList.add(projApi);
+			metadata.setSuccess(success);
+			metadata.setDescription("Found details");
+			metadata.setResponseId("TRA-" + "NX-" + UUID.randomUUID().toString());
+			ProjectResultData.setProject(ProjectList);
+			SuccessProjectResult.setMetadata(metadata);
+			SuccessProjectResult.setData(ProjectResultData);
+			return SuccessProjectResult;
+
+		} else {
+			metadata.setSuccess(failure);
+			metadata.setDescription("Order details");
+			metadata.setResponseId("TRA-" + "NX-" + UUID.randomUUID().toString());
+			FailureProjectResult.setMetadata(metadata);
+			errors.setCode("TRA-1001");
+			errors.setDescription("No Details found");
+			FailureProjectResult.setErrors(errors);
+			return FailureProjectResult;
+		}
+	}
+
+	@Override
+	public ProjectResult insertUser(CraftApi CraftApi) {
+		List<CraftApi> ProjectList = new ArrayList<CraftApi>();
+		CraftApi projApi = dao.createProjectApi(CraftApi);
+		if (projApi != null) {
+			ProjectList.add(projApi);
+			metadata.setSuccess(success);
+			metadata.setDescription("New record inserted");
+			metadata.setResponseId("TRA-" + "NX-" + UUID.randomUUID().toString());
+			ProjectResultData.setProject(ProjectList);
+			SuccessProjectResult.setMetadata(metadata);
+			SuccessProjectResult.setData(ProjectResultData);
+			return SuccessProjectResult;
+
+		} else {
+			metadata.setSuccess(failure);
+			metadata.setDescription("New record insertion error");
+			metadata.setResponseId("TRA-" + "NX-" + UUID.randomUUID().toString());
+			FailureProjectResult.setMetadata(metadata);
+			errors.setCode("TRA-1001");
+			errors.setDescription("No data available at this time");
+			FailureProjectResult.setErrors(errors);
+			return FailureProjectResult;
+		}
+	}
+
+	@Override
+	public ProjectResult updateUser(CraftApi CraftApi) {
+		List<CraftApi> ProjectList = new ArrayList<CraftApi>();
+		CraftApi projApi = dao.updateProjectApi(CraftApi);
+		if (projApi != null) {
+			ProjectList.add(projApi);
+			metadata.setSuccess(success);
+			metadata.setDescription(" record updated");
+			metadata.setResponseId("TRA-" + "NX-" + UUID.randomUUID().toString());
+			ProjectResultData.setProject(ProjectList);
+			SuccessProjectResult.setMetadata(metadata);
+			SuccessProjectResult.setData(ProjectResultData);
+			return SuccessProjectResult;
+
+		} else {
+			metadata.setSuccess(failure);
+			metadata.setDescription("record cannot be updated");
+			metadata.setResponseId("TRA-" + "NX-" + UUID.randomUUID().toString());
+			FailureProjectResult.setMetadata(metadata);
+			errors.setCode("TRA-1002");
+			errors.setDescription("No order exist");
+			FailureProjectResult.setErrors(errors);
+			return FailureProjectResult;
+		}
+	}
+
+	@Override
+	public ProjectResult deleteUser(String username) {
+		List<CraftApi> ProjectList = new ArrayList<CraftApi>();
+		CraftApi projApi = dao.deleteProjectApi(username);
+		if (projApi != null) {
+			ProjectList.add(projApi);
+			metadata.setSuccess(success);
+			metadata.setDescription(username+"  record deleted");
+			metadata.setResponseId("TRA-" + "NX-" + UUID.randomUUID().toString());
+			ProjectResultData.setProject(ProjectList);
+			SuccessProjectResult.setMetadata(metadata);
+			SuccessProjectResult.setData(ProjectResultData);
+			return SuccessProjectResult;
+
+		} else {
+			metadata.setSuccess(failure);
+			metadata.setDescription(username+"record cannot be deleted");
+			metadata.setResponseId("TRA-" + "NX-" + UUID.randomUUID().toString());
+			FailureProjectResult.setMetadata(metadata);
+			errors.setCode("TRA-1002");
+			errors.setDescription("No order exist with name - "+ username);
+			FailureProjectResult.setErrors(errors);
+			return FailureProjectResult;
+		}
+	}
+
+	
+
+	
+
+}
+
+
+
+

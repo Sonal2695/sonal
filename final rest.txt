@@ -1,0 +1,546 @@
+					
+
+
+							----------------ErrorSerializer --------
+
+package com.inautix.test;
+
+import java.io.IOException;
+
+import javax.sql.rowset.spi.SyncProvider;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+
+public class ErrorSerializer extends StdSerializer {
+     
+    public ErrorSerializer() {
+        super(Error.class);
+    }
+ 
+    public ErrorSerializer(Class t) {
+        super(t);
+    }
+ 
+    public void serialize(Object error, JsonGenerator generator,
+      SerializerProvider provider) 
+      throws IOException, JsonProcessingException {
+        generator.writeStartObject();
+        generator.writeFieldName("desc");
+        generator.writeString(((Enum<Error>) error).name());
+        generator.writeFieldName("Code");
+        generator.writeString("TRA"+((Error) error).getCode());
+        generator.writeEndObject();
+    }
+}
+
+
+								----------------Errors-----
+
+package com.inautix.test;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+@JsonSerialize(using = ErrorSerializer.class)
+public enum Error {
+NOTFOUND(404),
+INVALIDDATA(500),
+NOTLOGGEDIN(410),
+UNDEFINED(900);
+	private int code;
+	private Error(int code) {
+		this.code = code;
+	}
+	public int getCode() {
+		return code;
+	}
+	public void setCode(int code) {
+		this.code = code;
+	}
+	
+}
+
+
+
+								---------metadata------
+
+package com.inautix.test;
+
+public class MetaData {
+Boolean status;
+String message;
+public Boolean getStatus() {
+	return status;
+}
+public void setStatus(Boolean status) {
+	this.status = status;
+}
+public String getMessage() {
+	return message;
+}
+public void setMessage(String message) {
+	this.message = message;
+}
+
+}
+
+
+
+						------------Employee--------
+
+package Employeemodel;
+
+import java.sql.Date;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown=true)
+public class Employee {
+
+	private int Emp_Id;
+	private String Emp_name;
+	private Date DOB;
+	private String Designation;
+	private int Dept_Id;
+	
+	
+	
+@JsonCreator
+	public Employee(@JsonProperty("Emp_Id")int Emp_Id,
+			@JsonProperty("Emp_name")String Emp_name,
+			@JsonProperty("DOB")Date DOB,
+			@JsonProperty("Designation")String Designation,
+			@JsonProperty("Dept_Id")int Dept_Id) {
+		super();
+		this.Emp_Id = Emp_Id;
+		this.Emp_name = Emp_name;
+		this.DOB = DOB;
+		this.Designation = Designation;
+		this.Dept_Id = Dept_Id;
+	;
+	}
+	
+	public Employee() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+	
+	public int getEmp_Id() {
+		return Emp_Id;
+	}
+
+	public void setEmp_Id(int emp_Id) {
+		Emp_Id = emp_Id;
+	}
+
+	public String getEmp_name() {
+		return Emp_name;
+	}
+
+	public void setEmp_name(String emp_name) {
+		Emp_name = emp_name;
+	}
+
+	public Date getDOB() {
+		return DOB;
+	}
+
+	public void setDOB(Date dOB) {
+		DOB = dOB;
+	}
+
+	public String getDesignation() {
+		return Designation;
+	}
+
+	public void setDesignation(String designation) {
+		Designation = designation;
+	}
+
+	public int getDept_Id() {
+		return Dept_Id;
+	}
+
+	public void setDept_Id(int dept_Id) {
+		Dept_Id = dept_Id;
+	}
+
+
+	@Override
+	public String toString() {
+		StringBuilder str=new StringBuilder();
+		str.append("Emp_Id"+getEmp_Id());
+		str.append("Emp_name"+getEmp_name());
+		str.append("DOB"+getDOB());
+		str.append("Designation"+getDesignation());
+		str.append("Dept_Id"+getDept_Id());
+		return str.toString();
+	}
+	
+	
+	
+}
+
+					------wrapper--------
+
+package com.inautix.test;
+
+public interface Wrapper {
+public void setMetaData(MetaData metaData);
+public void setData(Object data);
+public void setError(Error error);
+}
+
+
+
+					------WrapperImplError ----
+
+package com.inautix.test;
+
+public class WrapperImplError implements Wrapper {
+MetaData metaData;
+Error error;
+public MetaData getMetaData() {
+	return metaData;
+}
+public void setMetaData(MetaData metaData) {
+	this.metaData = metaData;
+}
+public Error getError() {
+	return error;
+}
+public void setError(Error error) {
+	this.error = error;
+}
+public void setData(Object data) {
+	
+}
+
+}
+
+
+					-----WrapperImplFound-----
+
+package com.inautix.test;
+
+public class WrapperImplFound implements Wrapper{ 
+	MetaData metaData;
+	Object data;
+	public MetaData getMetaData() {
+		return metaData;
+	}
+	public void setMetaData(MetaData metaData) {
+		this.metaData = metaData;
+	}
+	public Object getData() {
+		return data;
+	}
+	public void setData(Object data) {
+		this.data = data;
+	}
+	public void setError(Error error) {
+		
+	}
+	
+}
+
+
+
+
+					-----Dao----
+package com.inautix.test;
+
+
+import java.util.List;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+
+@Repository
+public class DAO implements IEmployeeDAO {
+	
+	
+
+		JdbcTemplate template;
+
+		@Autowired
+		public void setDs(DataSource ds) {
+			template = new JdbcTemplate(ds);
+		}
+
+		public List<Employee> getUsers() {
+			List<Employee> emp=null;
+			try{
+			emp=template.query("select * from EMPLOYEE_XBBNMCM e,Department_XBBNMCM d where e.Dept_id=d.Dept_id ", new BeanPropertyRowMapper<Employee>(Employee.class));
+			return emp;
+			}
+			catch(DataAccessException e){
+				e.printStackTrace();
+			}
+			return null;
+		}
+		
+		public Employee insertEmployee(Employee employee) {
+			try{
+				int count=template.update("insert into EMPLOYEE_XBBNMCM values(?,?,?,?,?) ",new Object[]{employee.getEmp_Id(),employee.getEmp_name(),employee.getDOB(),employee.getDesignation(),employee.getDept_Id()});
+					return employee;
+				}
+				catch(DataAccessException e){
+					e.printStackTrace();
+				}
+				return null;
+			
+		}
+
+		public List<Employee> viewEmployee(int id) {
+			List<Employee> emp=null;
+			try{
+			emp=template.query("select * from EMPLOYEE_XBBNMCM e,Department_XBBNMCM d where e.Dept_id=d.Dept_id and Emp_id=? ",new Object[]{id}, new BeanPropertyRowMapper<Employee>(Employee.class));
+
+				System.out.println(emp);
+				     return emp;
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				return null;
+			    }
+			
+		}
+
+
+		public int updateEmployee(int id, Employee emp) {
+			try{
+				int count=template.update("update EMPLOYEE_XBBNMCM set Emp_name=?,DOB=?,Designation=?, Dept_id=? where Emp_id=? ",new Object[]{emp.getEmp_name(),emp.getDOB(),emp.getDesignation(),emp.getDept_Id(),emp.getEmp_Id()});
+				if(count==1)
+				return 1;
+				else return -1;
+			    } 
+			catch (Exception e) {
+				e.printStackTrace();
+				return -1;
+			    }
+		}
+
+
+		public int deleteEmployee(int Emp_Id) {
+			Employee emp=null;
+			try{
+				emp=template.queryForObject("select * from EMPLOYEE_XBBNMCM where Emp_id=? ",new Object[]{Emp_Id}, new BeanPropertyRowMapper<Employee>(Employee.class));
+				int count=template.update("delete from EMPLOYEE_XBBNMCM  where Emp_id=?",new Object[]{Emp_Id});
+					if(count==1)
+					return 1;
+				else return -1;
+			    } 
+			catch (Exception e) {
+				e.printStackTrace();
+				return -1;
+			    }
+		}
+
+		
+
+	}
+
+
+
+
+					----IDAO----
+
+
+package com.inautix.test;
+
+
+import java.util.List;
+
+
+public interface IEmployeeDAO {
+	
+public Employee insertEmployee(Employee employee);
+
+public List<Employee> viewEmployee(int id);
+
+public int updateEmployee(int id, Employee employee);
+	 
+public int deleteEmployee(int id);
+	 
+public List<Employee> getUsers();	
+	
+
+}
+
+
+
+
+				----controller---
+
+package com.inautix.test;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+
+
+@RestController
+public class EmployeeController {
+	
+	@Autowired
+	private DAO dao;
+	private Employee employee;
+	
+	 
+	
+	 @RequestMapping(value = "/employees", method = RequestMethod.POST,produces = "application/json")
+	 public ResponseEntity<Wrapper> createEmployee(@RequestBody Employee employee) {
+	  HttpHeaders headers = new HttpHeaders();
+	  if (employee == null) {
+	   return new ResponseEntity<Wrapper>(fetchFailed("No Users Found",Error.NOTFOUND),HttpStatus.BAD_REQUEST);
+	  }
+	  dao.insertEmployee(employee);
+	  headers.add("Employee Created  - ", String.valueOf(employee.getEmp_Id()));
+	  return new ResponseEntity<Wrapper>(found("Users Found:",employee), headers, HttpStatus.CREATED);
+	 }
+
+	 
+	 @RequestMapping(value = "/employees/{id}", method = RequestMethod.GET)
+	 public ResponseEntity<Wrapper> getEmployee(@PathVariable("id") int id) {
+	  List<Employee> employees = dao.viewEmployee(id);
+	  if (employees == null) {
+	   return new ResponseEntity<Wrapper>(fetchFailed("No Users Found",Error.NOTFOUND),HttpStatus.NOT_FOUND);
+	  }
+	  return new ResponseEntity<Wrapper>(found("Users Found:",employees), HttpStatus.OK);
+	 }
+
+	 @RequestMapping(value = "/employees", method = RequestMethod.GET)
+	 public ResponseEntity<Wrapper> getUsers() {
+	  List<Employee> employees = dao.getUsers();
+	  if (employees == null) {
+	   return new ResponseEntity<Wrapper>(fetchFailed("No Users Found",Error.NOTFOUND),HttpStatus.NOT_FOUND);
+	  }
+	  return new ResponseEntity<Wrapper>(found("Users Found:",employees), HttpStatus.OK);
+	 }
+	 
+	 
+	 @RequestMapping(value = "/employees/{id}", method = RequestMethod.PUT)
+	 public ResponseEntity<Wrapper> updateEmployee(@PathVariable("id") int id, @RequestBody Employee employee) {
+	  HttpHeaders headers = new HttpHeaders();
+	  int isExist = dao.updateEmployee(id, employee);
+	  if (isExist == 0) {   
+	   return new ResponseEntity<Wrapper>(fetchFailed("No Users Found",Error.NOTFOUND),HttpStatus.NOT_FOUND);
+	  } else if (employee == null) {
+	   return new ResponseEntity<Wrapper>(fetchFailed("No Users Found",Error.INVALIDDATA), HttpStatus.BAD_REQUEST);
+	  }
+	  //dao.updateEmployee(id, employee);
+	  headers.add("Employee Updated  - ", String.valueOf(id));
+	  return new ResponseEntity<Wrapper>(found("Users Found:",employee), headers, HttpStatus.OK);
+	 }
+	 
+	
+	 @RequestMapping(value = "/employees/delete/{id}", method = RequestMethod.DELETE)
+	 public ResponseEntity<Wrapper> deleteEmployee(@PathVariable("id") int id) {
+	  HttpHeaders headers = new HttpHeaders();
+	  int employee =dao.deleteEmployee(id);
+	  if (employee == 0) {   
+	   return new ResponseEntity<Wrapper>(fetchFailed("No Users Found",Error.NOTFOUND),HttpStatus.NOT_FOUND);
+	  }
+	 // dao.deleteEmployee(id);
+	  headers.add("Employee Deleted - ", String.valueOf(id));
+	  return new ResponseEntity<Wrapper>(found("Users Found:",employee), headers, HttpStatus.NO_CONTENT);
+	 }
+
+	 
+	 private Wrapper fetchFailed(String msg, Error error){
+			Wrapper result = new WrapperImplError();
+			MetaData meta = new MetaData();
+			meta.setMessage(msg);
+			meta.setStatus(false);
+			result.setMetaData(meta);
+			result.setError(error);
+			return result;
+		}
+		private Wrapper found(String msg,Object object){
+			Wrapper result = new WrapperImplFound();
+			MetaData meta = new MetaData();
+			meta.setMessage(msg);
+			meta.setStatus(true);
+			result.setMetaData(meta);
+			result.setData(object);
+			return result;
+		}
+}
+
+
+
+
+					------test-servlet.xml--------
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation=" http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd">
+
+	<mvc:annotation-driven />
+	<context:component-scan base-package="com.inautix.test" />
+
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@10.232.71.29:1521:INATP02" />
+		<property name="username" value="trng01" />
+		<property name="password" value="welcome123$" />
+	</bean>
+
+	<bean
+		class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping" />
+	<bean
+		class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter" />
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+	</bean>
+</beans>
+
+
+
+				----------web.xml------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" id="WebApp_ID" version="3.0">
+  <display-name>RestApi</display-name>
+  <servlet>
+  <servlet-name>test</servlet-name>
+  <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+  <load-on-startup>1</load-on-startup>
+ </servlet>
+ <servlet-mapping>
+  <servlet-name>test</servlet-name>
+  <url-pattern>/</url-pattern>
+ </servlet-mapping>
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+</web-app>
